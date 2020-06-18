@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private ListView logview;
     private EditText input;
     private Button button;
+    private Button sound_button;
 
     private final ArrayList<ChatMessage> chatLog = new ArrayList<>();
     private ArrayAdapter<ChatMessage> chatLogAdapter;
@@ -74,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
         progress = findViewById(R.id.main_progress);
         input = findViewById(R.id.main_input);
         button = findViewById(R.id.main_button);
+        sound_button = findViewById(R.id.sound_button);
 
         chatLogAdapter = new ArrayAdapter<ChatMessage>(this, 0, chatLog) {
             @Override
@@ -99,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
         logview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
+
                 ChatMessage msg = (ChatMessage) parent.getItemAtPosition(pos);
                 new AlertDialog.Builder(MainActivity.this)
                         .setTitle(getString(R.string.msg_title, msg.seq, msg.sender))
@@ -146,7 +149,13 @@ public class MainActivity extends AppCompatActivity {
                     activity.setState(State.Disconnected);
                     break;
                 case Agent.MSG_RECEIVED:
-                    activity.showMessage((ChatMessage) msg.obj);
+                    ChatMessage chatmessage = (ChatMessage) msg.obj;
+                    if(chatmessage.sound == 0) {
+                        activity.showMessage(chatmessage);
+                    }
+                    else {
+                        activity.soundPlayer.playConnected();
+                    }
                     break;
             }
         }
@@ -238,6 +247,12 @@ public class MainActivity extends AppCompatActivity {
         input.getEditableText().clear();
     }
 
+    public void onClickSoundButton(View v) {
+        long time = System.currentTimeMillis();
+        ChatMessage message = new ChatMessage(messageSeq, time,"", adapter.getName(), 1);
+        agent.send(message);
+    }
+
     public void setState(State state) {
         setState(state, null);
     }
@@ -246,6 +261,7 @@ public class MainActivity extends AppCompatActivity {
         this.state = state;
         input.setEnabled(state == State.Connected);
         button.setEnabled(state == State.Connected);
+        sound_button.setEnabled(state == State.Connected);
         switch (state) {
         case Initializing:
         case Disconnected:
